@@ -4,4 +4,3 @@ A pipeline to easily run multiple configurations of Domworld an convert the outp
 
 
 The The Grade I Deserve Is ... file is found in this repository. It is also in hello world repository
-
