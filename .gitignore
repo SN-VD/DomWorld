@@ -1,0 +1,4 @@
+#Ignore files with these endings
+*.exe
+*.cvs
+
