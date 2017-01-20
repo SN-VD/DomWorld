@@ -1,5 +1,6 @@
 # DomWorld
 Project for Practical Bioinformatics
+
 A pipeline to easily run multiple configurations of Domworld an convert the output into multiple graphs.
 
 
