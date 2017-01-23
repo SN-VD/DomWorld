@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 
 import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 def domworld (*configs)
-	allnames = []
-	#G1 = raw_input("Do you want a graph of average dominance? y/n?")
+	#G1 = raw_input("Do you want a graph of average dominance? y/n?")   #Ask for which graphs you want
+	allnames = []                                                       #Variables for creating graphs outside of the loop.
 	#if G1 == 'y':
 		#MAverageDom = []
 	for ini in configs:
@@ -17,5 +20,5 @@ def domworld (*configs)
 		totfemales = os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read 
 		totmales = os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read
 		totchimps = totfemales + totmales
-		os.popen('wine cDomWorld.exe '+ ini)
+		#os.popen('wine cDomWorld.exe '+ ini)                      #Run domworld, using ini as input
 		os.popen('cat '+ name +'*.csv > name.csv')

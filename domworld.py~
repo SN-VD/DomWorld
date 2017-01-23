@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
 def domworld (*configs)
 	allnames = []
@@ -17,5 +20,5 @@ def domworld (*configs)
 		totfemales = os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read 
 		totmales = os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read
 		totchimps = totfemales + totmales
-		os.popen('wine cDomWorld.exe '+ ini)
+		#os.popen('wine cDomWorld.exe '+ ini)
 		os.popen('cat '+ name +'*.csv > name.csv')
