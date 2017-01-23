@@ -8,4 +8,4 @@ def domworld (*configs)
 		#MAverageDom = []
 	for ini in configs:
 		os.popen('wine cDomWorld.exe '+ ini)
-
+	cat output*.csv > output.csv
