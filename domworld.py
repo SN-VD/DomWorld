@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-import os
+import os            
 import glob
 import pandas as pd
 import numpy as np
@@ -8,28 +8,35 @@ import matplotlib.pyplot as plt
 
 
 def domworld(*configs):
-    #G1 = raw_input("Do you want a graph of average dominance? y/n? ")   #Ask for which graphs you want
-    allnames = []                                                       #Variables for creating graphs outside of the loop.
-    print (configs)
-    #if G1 == 'y':
+    """ Domworld function: Takes multiple (but atleast 1) config files as input 
+    (Call as domworld('config.ini', 'config2.ini', etc). Runs them using Domworld.
+    The data is extracted from the outputfiles and used to create both graphs
+    depicting the settings from one configuration file, as well as graphs 
+    which compare the results of the different configurations. It also asks which 
+    graphs you want. Best working conditions for this script is inside the same
+    folder as cDomWorld.exe and the config files you want to use (otherwise,
+    use path for config files)"""
+    #G1 = raw_input("Do you want a graph of average dominance? y/n? ")   #Ask for which graphs you want to create
+    allnames = []                                                       #Variables for creating comparison graphs outside of the loop.
+    #if G1 == 'y':                                                     #If you want to graphs depicting average dominace, this will create a variable to to compare it outside the loop.
 	   #MAverageDom = []
-    for ini in configs:
-        numruns = int(os.popen("grep 'NumRuns' "+ ini +" | cut -d ' ' -f 3").read())
-    	maxperiod = int(os.popen("grep 'Periods' "+ ini +" | cut -d ' ' -f 3").read())
-    	startperiod = int(os.popen("grep 'firstDataPeriod' "+ ini +" | cut -d ' ' -f 3").read())
-        periodduration = int(os.popen("grep 'PeriodDurationFactor' "+ ini +" | cut -d ' ' -f 3").read())
-    	name = os.popen("grep 'OutFileName' "+ ini +" | cut -d ' ' -f 3").read().strip('\n').strip('"')
-        allnames = allnames.append(name)
-    	totfemales = int(os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read())
-    	totmales = int(os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read())
-    	totchimps = 10#totfemales + totmales
-    	#os.popen('wine cDomWorld.exe '+ ini)                      #Run domworld, using ini as input
-        filenumber = 1
-        activat = (startperiod - 1) * periodduration * totchimps
+    #Add line which places all *.csv files in folder in a new folder so they are out of the way
+    for ini in configs:                                                #Run the following code for each configuration file you put in.
+    	maxperiod = int(os.popen("grep 'Periods' "+ ini +" | cut -d ' ' -f 3").read())                     #Extract some handy data from the config file. This line extracts the total number of periods
+    	startperiod = int(os.popen("grep 'firstDataPeriod' "+ ini +" | cut -d ' ' -f 3").read())           #Extract the period from which the file will start measuring.
+        periodduration = int(os.popen("grep 'PeriodDurationFactor' "+ ini +" | cut -d ' ' -f 3").read())   #Extract how many activations per individual constitutes as a period 
+    	name = os.popen("grep 'OutFileName' "+ ini +" | cut -d ' ' -f 3").read().strip('\n').strip('"')    #Extracts name of the output file. Also delete the line endings and quotation marks for name
+        allnames = allnames.append(name)                                                                   #Sends name outside the loop
+    	totfemales = int(os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read())                 #Number of females
+    	totmales = int(os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read())                     #Number of males
+    	totchimps = totfemales + totmales                                                                  #Total number of individuals
+    	#os.popen('wine cDomWorld.exe '+ ini)                                                              #Run domworld, using ini as input
+        filenumber = 1                                                                                     #Used in dataframe to differentiate between output of different files
+        activat = (startperiod - 1) * periodduration * totchimps  #The first activation/datapoint that is recorded
         print activat
-        endline = periodduration * totchimps * maxperiod
+        endline = periodduration * totchimps * maxperiod          #The last activation/datapoint that is recorded
         print endline
-        MonkeyFrame = pd.DataFrame({ 'Run' : 'NaN', 
+        MonkeyFrame = pd.DataFrame({ 'Run' : 'NaN',               #Create the 'empty' dataframe with a junk line to add the other data to
 		'Activation' : 'NaN', 
 		'Period' : 'NaN', 
 		'Individual' : 'NaN', 
@@ -38,16 +45,16 @@ def domworld(*configs):
 		'Score' :  'NaN',
 		'X-pos' : 'NaN', 
 		'Y-pos' : 'NaN'},
-		index = ['Init'])
-        for outputfiles in glob.glob("*.csv"):
-            print 'Now processing :' + outputfiles
-            line = activat + 1
-            infile = open(outputfiles, 'r')
-            infile.readline()
-            while line <= endline:
-                current_line = infile.readline().split()
-                NewFrame = pd.DataFrame({ 'Run' : current_line[1], 
-                'Activation' : int(current_line[2]), 
+		index = ['Junk'])
+        for outputfiles in glob.glob("*.csv"):                  #Run the following codeblock on each output csv file
+            print 'Now processing :' + outputfiles              #Report which outputfile is currently being processed
+            line = activat + 1                                  #Prepare the starting value for the while loop
+            infile = open(outputfiles, 'r')                     #Open the output file for reading
+            infile.readline()                                   #Skip over the header
+            while line <= endline:                                 #While loop used to read the entire file until the last datapoint, as defined by the configfile
+                current_line = infile.readline().split()           #Read line and safe it as list seperated by tabs
+                NewFrame = pd.DataFrame({ 'Run' : current_line[1], #Create a new line to add to the dataframe. 
+                'Activation' : int(current_line[2]),               
 		        'Period' : int(current_line[3]), 
          		'Individual' : int(current_line[4]), 
 	        	'Sex' : current_line[5],
@@ -55,22 +62,21 @@ def domworld(*configs):
 		        'Score' :  float(current_line[7]),
 	        	'X-pos' : float(current_line[9]), 
 	        	'Y-pos' : float(current_line[10])},
-		        index = ["F"+str(filenumber)+'A'+str(line)])
-                line = line + 1
-                sep_pieces = [MonkeyFrame, NewFrame]
+		        index = ["F"+str(filenumber)+'A'+str(line)])      #Create a ascession code for the line, which consists of the File it is from + the Activation that is saved.
+                line = line + 1                                   #+ 1 to close the loop at the end
+                sep_pieces = [MonkeyFrame, NewFrame]              #Add the new line to the existing dataframe
                 MonkeyFrame = pd.concat(sep_pieces)
-            filenumber = filenumber + 1
-        #Remove startline van Monkeydata
+            filenumber = filenumber + 1                           #+1 to indicate the next file with data to be added to the datafram
+        MonkeyFrame = MonkeyFrame[1:]                 #Remove the junkline from the dataframe
         print MonkeyFrame.head(5)
         print MonkeyFrame.tail(5)
-        print MonkeyFrame['Init']
         
         
         
         
         os.popen("mkdir -p Output_" + name)
         #os.popen('mv *.csv Output_'+name)
-
+   os.popen("mkdir -p Comparison_Graphs")
  
       
 domworld('config.ini')
