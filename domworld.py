@@ -76,7 +76,7 @@ def domworld(*configs):
         
         os.popen("mkdir -p Output_" + name)
         #os.popen('mv *.csv Output_'+name)
-   os.popen("mkdir -p Comparison_Graphs")
+    os.popen("mkdir -p Comparison_Graphs")
  
       
 domworld('config.ini')
