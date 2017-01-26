@@ -7,6 +7,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import statistics as st
 import math
+import matplotlib.cm as cmx
+import matplotlib.colors as colors
+
+def get_cmap(N):
+    '''Returns a function that maps each index in 0, 1, ... N-1 to a distinct 
+    RGB color.''' "Not my own function. Source:http://stackoverflow.com/questions/14720331/how-to-generate-random-colors-in-matplotlib"
+    color_norm  = colors.Normalize(vmin=0, vmax=N-1)
+    scalar_map = cmx.ScalarMappable(norm=color_norm, cmap='hsv') 
+    def map_index_to_rgb_color(index):
+        return scalar_map.to_rgba(index)
+    return map_index_to_rgb_color
 
 def domworld(*configs):
     """ Domworld function: Takes multiple (but atleast 1) config files as input 
@@ -16,29 +27,35 @@ def domworld(*configs):
     which compare the results of the different configurations. It also asks which 
     graphs you want. Best working conditions for this script is inside the same
     folder as cDomWorld.exe and the config files you want to use (otherwise,
-    use path for config files)"""
+    use path for config files). Last function supports up to 5 config files. 
+    Any more and it won't add them to the comparison anymore"""
     G2 = raw_input("Do you want a box plot of average dominance? y/n? ")   #Ask for which graphs you want to create
     G1 = raw_input("Do you want a pie chart of actions taken? y/n? ")
     G3 = raw_input("Do you want a bar chart of the frequency of fighting? y/n? ")
     G4 = raw_input("Do you want a bar chart of the frequency of grooming? y/n? ")
     G5 = raw_input("Do you want a box plot of the average distance to centre? y/n? ")
-    allnames = []                                                       #Variables for creating comparison graphs outside of the loop.
-    #if G1 == 'y':                                                     #If you want to graphs depicting average dominace, this will create a variable to to compare it outside the loop.
-	   #MAverageDom = []
-    if G2 == 'y':
-        pielabels = []
-    #Add line which places all *.csv files in folder in a new folder so they are out of the way
+    allnames = 'junk '
+    inicount = 0                                                       #Variables for creating comparison graphs outside of the loop.
+    if G2 == 'y':                                                     #If you want to graphs depicting average dominace, this will create a variable to to compare it outside the loop.
+	   AllDoms = pd.DataFrame({ 'Run' : 1, 'Junk' : 'Nan'}, index = ['Test'])
+    if G3 == 'y':
+        outx_values_fight = []
+        outsterror_fight = []
+    if G4 == 'y':
+        outx_values_groom = []
+        outsterror_groom = []
     for ini in configs:                                                #Run the following code for each configuration file you put in.
     	maxperiod = int(os.popen("grep 'Periods' "+ ini +" | cut -d ' ' -f 3").read())                     #Extract some handy data from the config file. This line extracts the total number of periods
     	maxruns = int(os.popen("grep 'NumRuns' "+ ini +" | cut -d ' ' -f 3").read())
         startperiod = int(os.popen("grep 'firstDataPeriod' "+ ini +" | cut -d ' ' -f 3").read())           #Extract the period from which the file will start measuring.
         periodduration = int(os.popen("grep 'PeriodDurationFactor' "+ ini +" | cut -d ' ' -f 3").read())   #Extract how many activations per individual constitutes as a period 
     	name = os.popen("grep 'OutFileName' "+ ini +" | cut -d ' ' -f 3").read().strip('\n').strip('"')    #Extracts name of the output file. Also delete the line endings and quotation marks for name
-        allnames = allnames.append(name)                                                                   #Sends name outside the loop
+        allnames = allnames + name + ' '                                                                   #Sends name outside the loop
     	totfemales = int(os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read())                 #Number of females
     	totmales = int(os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read())                     #Number of males
     	totchimps = totfemales + totmales                                                                  #Total number of individuals
-    	#os.popen('wine cDomWorld.exe '+ ini)                                                              #Run domworld, using ini as input
+    	#os.popen('wine cDomWorld.exe '+ ini).read()                                                              #Run domworld, using ini as input
+        inicount = inicount + 1
         filenumber = 1                                                                                     #Used in dataframe to differentiate between output of different files
         activat = (startperiod - 1) * periodduration * totchimps  #The first activation/datapoint that is recorded
         print activat
@@ -79,23 +96,23 @@ def domworld(*configs):
             filenumber = filenumber + 1                           #+1 to indicate the next file with data to be added to the datafram
         MonkeyFrame = MonkeyFrame[1:]                 #Remove the junkline from the dataframe
         if G1 == 'y':                                     #Create pie chart of actions taken
-            labellist = MonkeyFrame.Behavior.unique()
-            number_of_actions = MonkeyFrame.groupby('Behavior').Activation.nunique()
-            max_cat = len(labellist)
+            labellist = MonkeyFrame.Behavior.unique()            #Get array of possible actions
+            number_of_actions = MonkeyFrame.groupby('Behavior').Activation.nunique()   #Count actions
+            max_cat = len(labellist)                             #Define how many actions there are
             count = 0
-            labels = 'junk '
+            labels = 'junk '                                  #Create beginning for string list
             while count < max_cat:
-                labels = labels + labellist[count] + ' '
+                labels = labels + labellist[count] + ' '         #Create list of actions
                 count = count + 1
             labels = labels.split()
             pielabels = labels[1:]
             count = 0
             list_n_actions = []
-            while count < max_cat:
+            while count < max_cat:                     #Create list with the number of taken per action
                 list_n_actions.append(number_of_actions[pielabels[count]])
                 count = count + 1
             fig1, pie1 = plt.subplots()
-            pie1.pie(list_n_actions, labels=pielabels, autopct='%1.1f%%',shadow=True, startangle=90)
+            pie1.pie(list_n_actions, labels=pielabels, autopct='%1.1f%%',shadow=True, startangle=90)    #Create a pie diagram 
             pie1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
             plt.show()
             fig1.savefig(name + '_pie_chart.png')
@@ -119,12 +136,14 @@ def domworld(*configs):
             ste_femalefemale = st.stdev(femalefemale) / math.sqrt(mean_femalefemale)
             x_values = [mean_malemale, mean_femalefemale, mean_intersex]                 #Put means and standard error into lists
             sterror =  [ste_malemale, ste_femalefemale, ste_intersex]
+            outx_values_fight.append(x_values)                                          #Sends data outside the loop
+            outsterror_fight.append(sterror)
             fig2, bar1 = plt.subplots()
             ind = np.arange(3)
             bar1.bar(ind + 0.35, x_values, width = 0.35,color='b', yerr = sterror, ecolor='black')                       #Create barplot
-            bar1.set_title('Frequency of Agression')
-            bar1.set_ylabel('# of attacks')
-            bar1.set_xticks(ind + 0.54)
+            bar1.set_title('Frequency of Agression')             #Graph Titel
+            bar1.set_ylabel('# of attacks')                 #Y-axis name
+            bar1.set_xticks(ind + 0.54)                #Distance between the bars
             bar1.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
             plt.show()
             fig2.savefig(name + '_aggression_bar_chart.png')
@@ -147,30 +166,31 @@ def domworld(*configs):
             ste_femalefemale = st.stdev(femalefemale) / math.sqrt(mean_femalefemale)
             x_values = [mean_malemale, mean_femalefemale, mean_intersex]                 #Put means and standard error into lists
             sterror =  [ste_malemale, ste_femalefemale, ste_intersex]
+            outx_values_groom.append(x_values)                                          #Sends data outside the loop
+            outsterror_groom.append(sterror)
             fig2, bar1 = plt.subplots()
             ind = np.arange(3)
             bar1.bar(ind + 0.35, x_values, width = 0.35,color='r', yerr = sterror, ecolor='black')                       #Create barplot
-            bar1.set_title('Frequency of Grooming')
-            bar1.set_ylabel('# of grooms')
-            bar1.set_xticks(ind + 0.54)
+            bar1.set_title('Frequency of Grooming')               #Titel
+            bar1.set_ylabel('# of grooms')              #Y-axis name
+            bar1.set_xticks(ind + 0.54)                #Distance between the bars
             bar1.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
             plt.show()
             fig2.savefig(name + '_grooming_bar_chart.png')            
         if G2 == 'y':                             #Boxplot average dominance
-            doms = MonkeyFrame.loc[:,['Score', 'Activation','Run']]
-            sexdom = MonkeyFrame.loc[:,['Sex','Score', 'Activation','Run']]
-            femdom = sexdom[(sexdom.Sex == 'F')].loc[:,['Score', 'Activation', 'Run']]
+            doms = MonkeyFrame.loc[:,['Score', 'Activation','Run']]          #Get Dominance score, ativation number and file number colums           
+            sexdom = MonkeyFrame.loc[:,['Sex','Score', 'Activation','Run']]    #Get Dominance score, ativation number and file number and the sex colums
+            femdom = sexdom[(sexdom.Sex == 'F')].loc[:,['Score', 'Activation', 'Run']]      #Sort by female and male
             mdom = sexdom[(sexdom.Sex == 'M')].loc[:,['Score', 'Activation', 'Run']]
             femdommatrix = pd.merge(femdom, mdom, how = 'left', on = ['Activation', 'Run'])
-            mdommatrix = pd.merge(mdom, femdom, how = 'left', on = ['Activation', 'Run'])
+            mdommatrix = pd.merge(mdom, femdom, how = 'left', on = ['Activation', 'Run'])        #Create 3 matrixes which can be used by boxplots
             alldommatrix = pd.merge(doms, mdom, how = 'left', on = ['Activation', 'Run'])
+            AllDoms = pd.merge(AllDoms, alldommatrix.loc[:,['Score', 'Run']], how = 'right', on =['Run'])
             alldommatrix = alldommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
             femdommatrix = femdommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
             mdommatrix = mdommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
-            #print alldommatrix
-            fig3, box1 = plt.subplots(nrows = 2, ncols=2, figsize=(6, 6), sharey=True)
-            #labels = ['Males', 'Females', 'All_individuals']
-            box1[1,0].boxplot(mdommatrix, labels=('Male', ''), showmeans=True, positions = ([1.5, 1.5]))
+            fig3, box1 = plt.subplots(nrows = 2, ncols=2, figsize=(6, 6), sharey=True)              #Create the boxplots
+            box1[1,0].boxplot(mdommatrix, labels=('Male', ''), showmeans=True, positions = ([1.5, 1.5]))    #Somehow needs to create a second, empty boxplot to create boxplot
             box1[1,0].set_title('Male Dominance', fontsize=10)
             box1[0,1].boxplot(femdommatrix, labels=('Female',''), showmeans=True, positions = ([1.5, 1.5]))
             box1[0,1].set_title('Female Dominance', fontsize=10)
@@ -178,33 +198,32 @@ def domworld(*configs):
             box1[0,0].set_title('Dominance', fontsize=10)
             plt.show()
             fig3.savefig(name + '_All_Dom_Box.png')
-        if G5 == 'y':                            
-            centralxy = MonkeyFrame.loc[:,['X_pos', 'Y_pos', 'Sex', 'Activation', 'Run']].rolling(window = 20).mean()
-            indixy = MonkeyFrame.loc[:,['X_pos', 'Y_pos', 'Sex', 'Activation', 'Run']].rolling(window = 1).mean()
-            sqrx = centralxy.X_pos.subtract(indixy.X_pos).abs().pow(2)
+        if G5== 'y':                             #Create distance to centre
+            centralxy = MonkeyFrame.loc[:,['X_pos', 'Y_pos', 'Sex', 'Activation', 'Run']].rolling(window = 20).mean()   #Calculate the average X and Y position in a 20 line windows, which is a reasonable approximation of the coordinates of the central point of the group
+            indixy = MonkeyFrame.loc[:,['X_pos', 'Y_pos', 'Sex', 'Activation', 'Run']].rolling(window = 1).mean()      #Contains the individual x and y positions
+            sqrx = centralxy.X_pos.subtract(indixy.X_pos).abs().pow(2)             #Use rule of Pythagoras to calculate the distance between the centre and the current location of the individual and save it as zside
             sqry = centralxy.Y_pos.subtract(indixy.Y_pos).abs().pow(2)
             zside = sqrx.add(sqry)
             zside = zside.apply(np.sqrt)
-            zside = zside.fillna(zside.mean())
-            distmatrix = pd.concat([zside, MonkeyFrame.loc[:,['Sex', 'Activation', 'Run']].rolling(window = 1).mean()], axis = 1)
-            mdist = distmatrix[(distmatrix.Sex == 'M')].loc[:,[0, 'Sex', 'Activation', 'Run']]
+            zside = zside.fillna(zside.mean())                              #Fill up the Nan with the mean, so the boxplots can be made
+            distmatrix = pd.concat([zside, MonkeyFrame.loc[:,['Sex', 'Activation', 'Run']].rolling(window = 1).mean()], axis = 1) #Add distance to center as part of the array 
+            mdist = distmatrix[(distmatrix.Sex == 'M')].loc[:,[0, 'Sex', 'Activation', 'Run']]                  #seperate into male and female
             femdist = distmatrix[(distmatrix.Sex == 'F')].loc[:,[0, 'Sex', 'Activation', 'Run']]
-            mdistmatrix = pd.merge(mdist, femdist, how = 'left', on = ['Activation', 'Sex', 'Run'])
+            mdistmatrix = pd.merge(mdist, femdist, how = 'left', on = ['Activation', 'Sex', 'Run'])            #Create matrixes which can be used to make boxplots
             femdistmatrix = pd.merge(femdist, mdist, how = 'left', on = ['Activation', 'Sex', 'Run'])
             alldistmatrix = pd.merge(distmatrix, femdist, how = 'left', on = ['Activation', 'Sex', 'Run'])
             alldistmatrix = alldistmatrix.loc[:,['0_x', '0_y']].as_matrix()
             femdistmatrix = femdistmatrix.loc[:,['0_x', '0_y']].as_matrix()
             mdistmatrix = mdistmatrix.loc[:,['0_x', '0_y']].as_matrix()
-            print alldistmatrix
-            fig4, box2 = plt.subplots(nrows = 2, ncols=2, figsize=(6, 6), sharey=True)
-            box2[1,0].boxplot(mdistmatrix, labels=('Male', ''), showmeans=True, positions = ([1.5, 1.5]))
+            fig4, box2 = plt.subplots(nrows = 2, ncols=2, figsize=(6, 6), sharey=True)           #Somehow needs to create a second, empty boxplot to create boxplot
+            box2[1,0].boxplot(mdistmatrix, labels=('Male', ''), showmeans=True, positions = ([1.5, 1.5]))    
             box2[1,0].set_title('Male Distance from Center with outliers', fontsize=10)
             box2[0,1].boxplot(femdistmatrix, labels=('Female',''), showmeans=True, positions = ([1.5, 1.5]))
             box2[0,1].set_title('Female Distance from Center with outliers', fontsize=10)
             box2[0,0].boxplot(alldistmatrix, labels=('All Inividuals', ''), showmeans=True, positions = ([1.5, 1.5]))
             box2[0,0].set_title('Distance from Center with outliers', fontsize=10)
-            plt.show()
-            fig4.savefig(name + '_All_Dist_Box.png')
+            plt.show()       
+            fig4.savefig(name + '_All_Dist_Box_Outlier.png')       #Due to the large divergence of outliers usually generated in here, create boxplots with outliers (above) and without (below)
             fig4, box2 = plt.subplots(nrows = 2, ncols=2, figsize=(6, 6), sharey=True)
             box2[1,0].boxplot(mdistmatrix, labels=('Male', ''), showmeans=True, positions = ([1.5, 1.5]), sym = '')
             box2[1,0].set_title('Male Distance from Center', fontsize=10)
@@ -214,9 +233,44 @@ def domworld(*configs):
             box2[0,0].set_title('Distance from Center', fontsize=10)
             plt.show()
             fig4.savefig(name + '_All_Dist_Box.png')
-        os.popen("mkdir -p Output_" + name)
+        os.popen("mkdir -p Output_" + name)                  #Create a directory and put all the newly generated images and csv files into it.
         #os.popen('mv ' + name + '*.csv Output_'+name)
-    os.popen("mkdir -p Comparison_Graphs")
+        os.popen('mv ' + name + '*.png Output_'+name)
+    os.popen("mkdir -p Comparison_Graphs")              #Create directory for comparison graphs
+    allnames = allnames.split()
+    allnames = allnames[1:]
+    ind = np.arange(3)
+    width = 0.35
+    cmap = get_cmap(inicount)
+    print AllDoms
+    outfig1, outax = plt.subplots()
+    if inicount == 2:                                #Brute force method until i find a way to work this with loops or something similar
+        if G3 == 'y':
+            outfig1, outax = plt.subplots()
+            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = 'b', ecolor='black')
+            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = 'r', ecolor='black')
+            outax.set_ylabel('# of Fights')
+            outax.set_title('Frequency of Fighting')
+            outax.set_xticks(ind + 0.54)
+            outax.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax.legend((outbar1[0], outbar2[0]), (allnames[0], allnames[1]), loc = 2)
+            plt.show()
+            outfig1.savefig('Multiple_Agression.png')
+        if G4 == 'y':
+            outfig2, outax2 = plt.subplots()
+            outbar1 = outax2.bar(ind, outx_values_groom[0], width, color = cmap(0.5))
+            outbar2 = outax2.bar(ind + width, outx_values_groom[1], width, color = cmap(1.5))
+            outax2.set_ylabel('# of Fights')
+            outax2.set_title('Frequency of Fighting')
+            outax2.set_xticks(ind + 0.54)
+            outax2.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax2.legend((outbar1[0], outbar2[0]), (allnames[0], allnames[1]), loc = 2)
+            plt.show()
+            outfig2.savefig('Multiple_Agression.png')
+        if G2 == 'y':
+            print('y')
+        if G5 == 'y':
+            print('y')            
  
     
-domworld('config.ini')
+domworld('config.ini', 'config2.ini')
