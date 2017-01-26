@@ -36,8 +36,8 @@ def domworld(*configs):
     G5 = raw_input("Do you want a box plot of the average distance to centre? y/n? ")
     allnames = 'junk '
     inicount = 0                                                       #Variables for creating comparison graphs outside of the loop.
-    if G2 == 'y':                                                     #If you want to graphs depicting average dominace, this will create a variable to to compare it outside the loop.
-	   AllDoms = pd.DataFrame({ 'Run' : 1, 'Junk' : 'Nan'}, index = ['Test'])
+    #if G2 == 'y':                                                     #If you want to graphs depicting average dominace, this will create a variable to to compare it outside the loop.
+	  # AllDoms = pd.DataFrame({ 'Run' : 1, 'Junk' : 'Nan'}, index = ['Test'])
     if G3 == 'y':
         outx_values_fight = []
         outsterror_fight = []
@@ -54,7 +54,7 @@ def domworld(*configs):
     	totfemales = int(os.popen("grep 'NumFemales' "+ ini +" | cut -d ' ' -f 3").read())                 #Number of females
     	totmales = int(os.popen("grep 'NumMales' "+ ini +" | cut -d ' ' -f 3").read())                     #Number of males
     	totchimps = totfemales + totmales                                                                  #Total number of individuals
-    	#os.popen('wine cDomWorld.exe '+ ini).read()                                                              #Run domworld, using ini as input
+    	#os.popen('wine cDomWorld.exe '+ ini).read()                                                              #Run domworld, using ini as input. Dont use if you dont have cDomWorld.exe, but do have a config + output
         inicount = inicount + 1
         filenumber = 1                                                                                     #Used in dataframe to differentiate between output of different files
         activat = (startperiod - 1) * periodduration * totchimps  #The first activation/datapoint that is recorded
@@ -185,7 +185,7 @@ def domworld(*configs):
             femdommatrix = pd.merge(femdom, mdom, how = 'left', on = ['Activation', 'Run'])
             mdommatrix = pd.merge(mdom, femdom, how = 'left', on = ['Activation', 'Run'])        #Create 3 matrixes which can be used by boxplots
             alldommatrix = pd.merge(doms, mdom, how = 'left', on = ['Activation', 'Run'])
-            AllDoms = pd.merge(AllDoms, alldommatrix.loc[:,['Score', 'Run']], how = 'right', on =['Run'])
+           # AllDoms = pd.merge(AllDoms, alldommatrix.loc[:,['Score', 'Run']], how = 'right', on =['Run'])    #Export out of the loop
             alldommatrix = alldommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
             femdommatrix = femdommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
             mdommatrix = mdommatrix.loc[:,['Score_x', 'Score_y']].as_matrix()
@@ -234,7 +234,7 @@ def domworld(*configs):
             plt.show()
             fig4.savefig(name + '_All_Dist_Box.png')
         os.popen("mkdir -p Output_" + name)                  #Create a directory and put all the newly generated images and csv files into it.
-        #os.popen('mv ' + name + '*.csv Output_'+name)
+        os.popen('mv ' + name + '*.csv Output_'+name)
         os.popen('mv ' + name + '*.png Output_'+name)
     os.popen("mkdir -p Comparison_Graphs")              #Create directory for comparison graphs
     allnames = allnames.split()
@@ -242,13 +242,12 @@ def domworld(*configs):
     ind = np.arange(3)
     width = 0.35
     cmap = get_cmap(inicount)
-    print AllDoms
     outfig1, outax = plt.subplots()
     if inicount == 2:                                #Brute force method until i find a way to work this with loops or something similar
         if G3 == 'y':
             outfig1, outax = plt.subplots()
-            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = 'b', ecolor='black')
-            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = 'r', ecolor='black')
+            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = cmap(0.5), ecolor='black')
+            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = cmap(1.5), ecolor='black')
             outax.set_ylabel('# of Fights')
             outax.set_title('Frequency of Fighting')
             outax.set_xticks(ind + 0.54)
@@ -260,17 +259,94 @@ def domworld(*configs):
             outfig2, outax2 = plt.subplots()
             outbar1 = outax2.bar(ind, outx_values_groom[0], width, color = cmap(0.5))
             outbar2 = outax2.bar(ind + width, outx_values_groom[1], width, color = cmap(1.5))
-            outax2.set_ylabel('# of Fights')
-            outax2.set_title('Frequency of Fighting')
+            outax2.set_ylabel('# of grooms')
+            outax2.set_title('Frequency of Grooming')
             outax2.set_xticks(ind + 0.54)
             outax2.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
             outax2.legend((outbar1[0], outbar2[0]), (allnames[0], allnames[1]), loc = 2)
             plt.show()
-            outfig2.savefig('Multiple_Agression.png')
-        if G2 == 'y':
-            print('y')
-        if G5 == 'y':
-            print('y')            
- 
+            outfig2.savefig('Multiple_Grooming.png')
+    if inicount == 3:                                #Brute force method until i find a way to work this with loops or something similar
+        if G3 == 'y':
+            outfig1, outax = plt.subplots()
+            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = cmap(0.5), ecolor='black')
+            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = cmap(1.5), ecolor='black')
+            outbar3 = outax.bar(ind + width *2, outx_values_fight[2], width, color = cmap(2.5), ecolor='black')
+            outax.set_ylabel('# of Fights')
+            outax.set_title('Frequency of Fighting')
+            outax.set_xticks(ind + 0.54)
+            outax.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax.legend((outbar1[0], outbar2[0], outbar3[0]), (allnames[0], allnames[1], allnames[2]), loc = 2)
+            plt.show()
+            outfig1.savefig('Multiple_Agression.png')
+        if G4 == 'y':
+            outfig2, outax2 = plt.subplots()
+            outbar1 = outax2.bar(ind, outx_values_groom[0], width, color = cmap(0.5))
+            outbar2 = outax2.bar(ind + width, outx_values_groom[1], width, color = cmap(1.5))
+            outbar3 = outax2.bar(ind + width * 2, outx_values_groom[2], width, color = cmap(2.5))
+            outax2.set_ylabel('# of grooms')
+            outax2.set_title('Frequency of Grooming')
+            outax2.set_xticks(ind + 0.54)
+            outax2.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax2.legend((outbar1[0], outbar2[0], outbar3[0]), (allnames[0], allnames[1], allnames[2]), loc = 2)
+            plt.show()
+            outfig2.savefig('Multiple_Grooming.png')
+    if inicount == 4:                                #Brute force method until i find a way to work this with loops or something similar
+        if G3 == 'y':
+            outfig1, outax = plt.subplots()
+            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = cmap(0.5), ecolor='black')
+            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = cmap(1.5), ecolor='black')
+            outbar3 = outax.bar(ind + width * 2, outx_values_fight[2], width, color = cmap(2.5), ecolor='black')
+            outbar4 = outax.bar(ind + width * 3, outx_values_fight[3], width, color = cmap(3.5), ecolor='black')
+            outax.set_ylabel('# of Fights')
+            outax.set_title('Frequency of Fighting')
+            outax.set_xticks(ind + 0.54)
+            outax.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax.legend((outbar1[0], outbar2[0], outbar3[0], outbar4[0]), (allnames[0], allnames[1], allnames[2], allnames[3]), loc = 2)
+            plt.show()
+            outfig1.savefig('Multiple_Grooming.png')
+        if G4 == 'y':
+            outfig2, outax2 = plt.subplots()
+            outbar1 = outax2.bar(ind, outx_values_groom[0], width, color = cmap(0.5))
+            outbar2 = outax2.bar(ind + width, outx_values_groom[1], width, color = cmap(1.5))
+            outbar3 = outax2.bar(ind + width * 2, outx_values_groom[2], width, color = cmap(2.5))
+            outbar4 = outax2.bar(ind + width * 3, outx_values_groom[3], width, color = cmap(3.5))
+            outax2.set_ylabel('# of grooms')
+            outax2.set_title('Frequency of Grooming')
+            outax2.set_xticks(ind + 0.54)
+            outax2.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax2.legend((outbar1[0], outbar2[0], outbar3[0], outbar4[0]), (allnames[0], allnames[1], allnames[2], allnames[3]), loc = 2)
+            plt.show()
+            outfig2.savefig('Multiple_Grooming.png')
+    if inicount == 5:                                #Brute force method until i find a way to work this with loops or something similar
+        if G3 == 'y':
+            outfig1, outax = plt.subplots()
+            outbar1 = outax.bar(ind, outx_values_fight[0], width, color = cmap(0.5), ecolor='black')
+            outbar2 = outax.bar(ind + width, outx_values_fight[1], width, color = cmap(1.5), ecolor='black')
+            outbar3 = outax.bar(ind + width * 2, outx_values_fight[3], width, color = cmap(2.5), ecolor='black')
+            outbar4 = outax.bar(ind + width * 3, outx_values_fight[4], width, color = cmap(3.5), ecolor='black')
+            outbar5 = outax.bar(ind + width * 4, outx_values_fight[4], width, color = cmap(4.5), ecolor='black')
+            outax.set_ylabel('# of Fights')
+            outax.set_title('Frequency of Fighting')
+            outax.set_xticks(ind + 0.54)
+            outax.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax.legend((outbar1[0], outbar2[0], outbar3[0], outbar4[0], outbar5[0]), (allnames[0], allnames[1], allnames[2], allnames[3], allnames[4]), loc = 2)
+            plt.show()
+            outfig1.savefig('Multiple_Agression.png')
+        if G4 == 'y':
+            outfig2, outax2 = plt.subplots()
+            outbar1 = outax2.bar(ind, outx_values_groom[0], width, color = cmap(0.5))
+            outbar2 = outax2.bar(ind + width * 2, outx_values_groom[1], width, color = cmap(1.5))
+            outbar3 = outax2.bar(ind + width * 3, outx_values_groom[2], width, color = cmap(2.5))
+            outbar4 = outax2.bar(ind + width * 4, outx_values_groom[3], width, color = cmap(3.5))
+            outbar5 = outax2.bar(ind + width * 5, outx_values_groom[4], width, color = cmap(4.5))
+            outax2.set_ylabel('# of grooms')
+            outax2.set_title('Frequency of Grooming')
+            outax2.set_xticks(ind + 0.54)
+            outax2.set_xticklabels(('Male-Male', 'Female-Female', 'Intersex'))
+            outax2.legend((outbar1[0], outbar2[0], outbar3[0], outbar4[0], outbar5[0]), (allnames[0], allnames[1], allnames[2], allnames[3], allnames[4]), loc = 2)
+            plt.show()
+            outfig2.savefig('Multiple_Grooming.png')
+    os.popen('mv  *.png -p Comparison_Graphs')
     
-domworld('config.ini', 'config2.ini')
+domworld('config.ini', 'config2.ini')      #Change input by changing the names of the input files here
