@@ -1,0 +1,7 @@
+#############Installation
+In order for Domworld.py to work, it needs to be in the same folder as cDomWorld.exe. Should you be using the example .csv files, these should also be in the same folder as Domworld.py.
+Domworld.py also needs to have the following modules installed to work: os, numpy, matplotlib, glob, pandas, statistics and math.
+
+##############How to use
+Domworld.py can be started just by typing its path into the terminal (for example: ~/Downloads/Domworld.py) It will then ask the user for input in the form of config files. 2 example config.ini files with explanations of the parameters are included in the github. One or more can be loaded at the same time, using the following input format: 'config.ini' or for multiple files : 'config.ini', 'config2.ini'. After loading the config files, the raw output data is created in the form of csv with the name specified in the config files. It is important that each config file has a different name than the others for its outputfiles. 
+The csv files contains the following data
