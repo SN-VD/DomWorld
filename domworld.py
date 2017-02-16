@@ -684,4 +684,4 @@ def domworld(*configs):
         fig3.savefig('Comparison_Male_Steepness_over_time_error.png')
     os.popen('mv  *.png -p Comparison_Graphs')
     
-domworld('config.ini', 'config2.ini', 'config3.ini', 'config4.ini', 'config5.ini')      #Change input by changing the names of the input files here
+domworld('config.ini', 'config2.ini')      #Change input by changing the names of the input files here
